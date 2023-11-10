@@ -29,7 +29,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var string The hashed password
      */
     #[ORM\Column]
-    private ?string $password = null;
+    private string $password ;
 
     #[ORM\Column(length: 255)]
     private ?string $firstName = null;
@@ -40,7 +40,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $Picture = null;
 
-    #[ORM\Column(type: Types::ARRAY)]
+
     private array $Role = [];
 
     #[ORM\OneToMany(mappedBy: 'Author', targetEntity: Article::class)]
