@@ -2,6 +2,8 @@ controllers:
     resource:
         path: ../src/Controller/
         namespace: App\Controller
-    type: attribute
+    type: annotation
+    prefix: '/api/v1'
 api_login_check:
     path: /api/login_check
+
