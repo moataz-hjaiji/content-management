@@ -4,6 +4,4 @@ controllers:
         namespace: App\Controller
     type: annotation
     prefix: '/api/v1'
-api_login_check:
-    path: /api/login_check
 

@@ -19,5 +19,8 @@ class PasswordService
 
         return $user;
     }
-    public function
+    public function isValidPassword(User $user,string $password):bool
+    {
+        return $this->passwordHasher->isPasswordValid($user,$password);
+    }
 }
