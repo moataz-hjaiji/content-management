@@ -6,33 +6,30 @@ use App\Entity\User;
 use App\Form\LoginFormType;
 use App\Form\SignupType;
 use App\Repository\UserRepository;
-use App\Service\PasswordService;
+use App\Service\AuthService;
 use Doctrine\ORM\EntityManagerInterface;
-use JetBrains\PhpStorm\NoReturn;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
-use Symfony\Component\Form\FormInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Security;
-use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/auth',name: "auth_")]
 class AuthenticationController extends AbstractController
 {
     public function __construct(
-        private JWTTokenManagerInterface $tokenManager,
-        private UserRepository $userRepository,
-        private EntityManagerInterface $em,
-        private PasswordService $passwordService
+        private JWTTokenManagerInterface        $tokenManager,
+        private UserRepository                  $userRepository,
+        private  EntityManagerInterface $em,
+        private AuthService                     $authService
     )
     {
     }
 
-    #[Route('/signup', name: 'signup', methods: ['POST'])]
+    #[Route('/signup', name: 'signup', methods: 'POST')]
     public function signUp(Request $request): JsonResponse
     {
         $user = new User();
@@ -44,7 +41,7 @@ class AuthenticationController extends AbstractController
         $form = $this->createForm(SignupType::class, $user);
         $form->submit($jsonData);
         if ($form->isValid()) {
-            $this->passwordService->hashedPassword($user);
+            $this->authService->hashedPassword($user);
             $this->em->persist($user);
             $this->em->flush();
             $token = $this->tokenManager->create($user);
@@ -56,13 +53,13 @@ class AuthenticationController extends AbstractController
 
         return $this->json(['errors' => $errors[0]], Response::HTTP_BAD_REQUEST);
     }
-    #[Route('/login',name:"login",methods:'POST')]
+    #[Route('/login', name:"login",methods: 'POST')]
     public function login(Request $request): JsonResponse
     {
+
         $jsonData = json_decode($request->getContent(), true);
-        $email = $jsonData['email'];
-        $user = $this->userRepository->findOneBy(["email"=>$email]);
-        $isValidPassword = $this->passwordService->isValidPassword($user,$jsonData['password']);
+        $user = $this->userRepository->findOneBy(["email"=>$jsonData['email']]);
+        $isValidPassword = $this->authService->isValidPassword($user,$jsonData['password']);
         if(!$user||!$isValidPassword){
             return $this->json(['errors' => "invalid credential"], Response::HTTP_BAD_REQUEST);
         }
@@ -71,6 +68,7 @@ class AuthenticationController extends AbstractController
         $form->submit($jsonData);
         if($form->isValid()){
             $token = $this->tokenManager->create($user);
+            $this->authService->authenticate($request);
             return $this->json(['token' => $token,"status"=>"success","id"=>$user->getId()], Response::HTTP_CREATED);
         }
         $errors = $this->getErrorsFromForm($form);
@@ -79,9 +77,9 @@ class AuthenticationController extends AbstractController
     }
 
     #[Route('/me',name:"me",methods: ['GET'])]
-    public function getAuthenticatedUser(): JsonResponse
+    public function getAuthenticatedUser(#[CurrentUser] User $user): JsonResponse
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        dd('test');
         $user = $this->getUser();
         $this->getAuthenticatedUser();
         if (!$user) {
