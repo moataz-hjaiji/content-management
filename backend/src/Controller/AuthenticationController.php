@@ -35,7 +35,6 @@ class AuthenticationController extends AbstractController
     public function signUp(Request $request): JsonResponse
     {
         $user = new User();
-
         $jsonData = json_decode($request->getContent(), true);
         if ($jsonData === null) {
             return $this->json(['error' => 'Invalid JSON data'], Response::HTTP_BAD_REQUEST);
