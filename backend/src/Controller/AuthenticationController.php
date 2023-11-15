@@ -10,11 +10,13 @@ use App\Service\AuthService;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/auth',name: "auth_")]
@@ -29,7 +31,7 @@ class AuthenticationController extends AbstractController
     {
     }
 
-    #[Route('/signup', name: 'signup', methods: 'POST')]
+    #[Route('/signup', name: 'signup', methods: ['POST'])]
     public function signUp(Request $request): JsonResponse
     {
         $user = new User();
@@ -53,14 +55,15 @@ class AuthenticationController extends AbstractController
 
         return $this->json(['errors' => $errors[0]], Response::HTTP_BAD_REQUEST);
     }
-    #[Route('/login', name:"login",methods: 'POST')]
-    public function login(Request $request): JsonResponse
+    #[Route('/login', name:"login",methods: ['POST'])]
+    public function login(Request $request,#[CurrentUser] User $user,Security $security): JsonResponse
     {
-
         $jsonData = json_decode($request->getContent(), true);
-        $user = $this->userRepository->findOneBy(["email"=>$jsonData['email']]);
+        if(!$user){
+            return $this->json(['errors' => "no user find with this email "],Response::HTTP_BAD_REQUEST);
+        }
         $isValidPassword = $this->authService->isValidPassword($user,$jsonData['password']);
-        if(!$user||!$isValidPassword){
+        if(!$isValidPassword){
             return $this->json(['errors' => "invalid credential"], Response::HTTP_BAD_REQUEST);
         }
         $form = $this->createForm(LoginFormType::class,$user);
@@ -69,33 +72,34 @@ class AuthenticationController extends AbstractController
         if($form->isValid()){
             $token = $this->tokenManager->create($user);
             $this->authService->authenticate($request);
-            return $this->json(['token' => $token,"status"=>"success","id"=>$user->getId()], Response::HTTP_CREATED);
+            $security->login($user);
+            return $this->json(['token' => $token,"status"=>"success","id"=>$user->getId()], Response::HTTP_OK);
         }
         $errors = $this->getErrorsFromForm($form);
-
         return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
     }
 
-    #[Route('/me',name:"me",methods: ['GET'])]
-    public function getAuthenticatedUser(#[CurrentUser] User $user): JsonResponse
+    #[Route('/me',name:"me",methods: ['GET','POST'])]
+    public function getAuthenticatedUser(#[CurrentUser] User $user,TokenInterface $token): JsonResponse
     {
-        dd('test');
-        $user = $this->getUser();
-        $this->getAuthenticatedUser();
+
         if (!$user) {
-            return $this->json(['error' => 'Not authenticated'], JsonResponse::HTTP_UNAUTHORIZED);
+            return $this->json(['error' => 'Not authenticated'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // You can customize the data you want to expose about the user
         $userData = [
             'id' => $user->getId(),
-            'username' => $user->getUsername(),
+            'email' => $user->getUserIdentifier(),
             // Add other properties as needed
         ];
 
-        return $this->json($userData);
+        return $this->json($userData,Response::HTTP_OK);
     }
+    #[Route('/logout',name:"logout",methods: 'GET')]
+    public function logout()
+    {
 
+    }
     private function getErrorsFromForm(FormInterface $form): array
     {
         $errors = [];

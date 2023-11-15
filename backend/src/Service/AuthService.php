@@ -13,7 +13,7 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 class AuthService
 {
-    public function __construct(private UserPasswordHasherInterface $passwordHasher)
+    public function __construct(private  UserPasswordHasherInterface $passwordHasher)
     {
     }
 
@@ -39,7 +39,7 @@ class AuthService
             new UserBadge($email),
             new PasswordCredentials($request->request->get('password', '')),
             [
-                new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),            ]
+                new CsrfTokenBadge('authenticate', $request->request->get('email')),            ]
         );
     }
 }
