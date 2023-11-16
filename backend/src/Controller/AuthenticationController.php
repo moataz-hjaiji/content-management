@@ -3,8 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Form\LoginFormType;
-use App\Form\SignupType;
+use App\Form\Auth\LoginFormType;
+use App\Form\Auth\ResetPasswordType;
+use App\Form\Auth\SignupType;
 use App\Repository\UserRepository;
 use App\Service\AuthService;
 use App\Service\Email\VerificationEmail;
@@ -19,7 +20,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -113,7 +113,7 @@ class AuthenticationController extends AbstractController
     {
         $errors = [];
 
-        foreach ($form->getErrors(true, true) as $error) {
+        foreach ($form->getErrors(true ) as $error) {
             $errors[] = $error->getMessage();
         }
 
@@ -144,14 +144,30 @@ class AuthenticationController extends AbstractController
             $this->em->flush();
             return $this->json(['status'=>"success","message"=>"account active successfully"],Response::HTTP_OK);
         } catch (Exception $e){
-            return $this->json(['status'=>"failed","message"=>"invalid Token"],Response::HTTP_BAD_REQUEST);
+            return $this->json(['status'=>"failed","message"=>"invalid Token","error"=>$e->getMessage()],Response::HTTP_BAD_REQUEST);
         }
     }
 
     #[Route('/resetPassword',name:"reset_password",methods: 'POST')]
-    public function resetPassword():Response
+    public function resetPassword(Request $request,#[CurrentUser] User $user):Response
     {
-
+        $jsonData = json_decode($request->getContent(),true);
+        $form = $this->createForm(ResetPasswordType::class);
+        $form->handleRequest($request);
+        $form->submit($jsonData);
+        if($form->isValid()){
+            $oldPasswordIsValid = $this->authService->isValidPassword($user,$jsonData['oldPassword']);
+            if(!$oldPasswordIsValid){
+                return $this->json(['status'=>'failed',"message"=>"old password is invalid"],Response::HTTP_BAD_REQUEST);
+            }
+            $user->setPassword($jsonData['newPassword']);
+             $user = $this->authService->hashedPassword($user);
+            $this->em->persist($user);
+            $this->em->flush();
+            return $this->json(['status'=>'success',"message"=>"user updated successfully"],Response::HTTP_OK);
+        }
+        $messageError = $this->getErrorsFromForm($form);
+        return $this->json(['status'=>'failed',"message"=>$messageError],Response::HTTP_BAD_REQUEST);
     }
 
 }
