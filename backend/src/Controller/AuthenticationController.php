@@ -105,7 +105,7 @@ class AuthenticationController extends AbstractController
         return $this->json($userData,Response::HTTP_OK);
     }
     #[Route('/logout',name:"logout",methods: 'GET')]
-    public function logout()
+    public function logout():void
     {
 
     }
