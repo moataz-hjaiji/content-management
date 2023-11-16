@@ -7,7 +7,10 @@ use App\Form\LoginFormType;
 use App\Form\SignupType;
 use App\Repository\UserRepository;
 use App\Service\AuthService;
+use App\Service\Email\VerificationEmail;
 use Doctrine\ORM\EntityManagerInterface;
+use Lcobucci\JWT\Exception;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWSProvider\JWSProviderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -15,6 +18,8 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -24,24 +29,29 @@ class AuthenticationController extends AbstractController
 {
     public function __construct(
         private JWTTokenManagerInterface        $tokenManager,
-        private UserRepository                  $userRepository,
         private  EntityManagerInterface $em,
-        private AuthService                     $authService
+        private AuthService                     $authService,
+        private UserRepository $userRepository
     )
     {
     }
 
+    /**
+     * @throws TransportExceptionInterface
+     */
     #[Route('/signup', name: 'signup', methods: ['POST'])]
-    public function signUp(Request $request): JsonResponse
+    public function signUp(Request $request,VerificationEmail $verificationEmail): JsonResponse
     {
         $user = new User();
         $jsonData = json_decode($request->getContent(), true);
         if ($jsonData === null) {
             return $this->json(['error' => 'Invalid JSON data'], Response::HTTP_BAD_REQUEST);
         }
+
         $form = $this->createForm(SignupType::class, $user);
         $form->submit($jsonData);
         if ($form->isValid()) {
+            $verificationEmail->sendEmail($user->getEmail(),"email sent to ".$user->getEmail());
             $this->authService->hashedPassword($user);
             $this->em->persist($user);
             $this->em->flush();
@@ -118,4 +128,30 @@ class AuthenticationController extends AbstractController
 
         return $errors;
     }
+
+    #[Route('/verifEmail/{token}',name:"verif_email",methods: 'POST')]
+    public function verifEmail( $token,JWSProviderInterface $JWSProvider):Response
+    {
+        try {
+            $jws = $JWSProvider->load($token);
+            if($jws->isExpired()){
+                return $this->json(['status'=>'failed',"message"=>"expired token"],Response::HTTP_BAD_REQUEST);
+            }
+            $payload = $jws->getPayload();
+            $user = $this->userRepository->findOneBy(['email'=>$payload['username']]);
+            $user->setIsActive(true);
+            $this->em->persist($user);
+            $this->em->flush();
+            return $this->json(['status'=>"success","message"=>"account active successfully"],Response::HTTP_OK);
+        } catch (Exception $e){
+            return $this->json(['status'=>"failed","message"=>"invalid Token"],Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    #[Route('/resetPassword',name:"reset_password",methods: 'POST')]
+    public function resetPassword():Response
+    {
+
+    }
+
 }

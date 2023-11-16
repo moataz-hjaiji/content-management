@@ -26,5 +26,10 @@ services:
     App\EventListener\SecuritySubscriber:
         tags:
             - { name: 'monolog.logger', channel: 'security' }
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+
+    Mailtrap\MailtrapClient:
+        arguments:
+            - '%env(MAILER_API_TOKEN)%'
+    Mailtrap\Bridge\Transport\MailtrapTransportFactory:
+        tags:
+            - { name: 'mailer.transport_factory' }
