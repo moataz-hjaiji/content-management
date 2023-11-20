@@ -4,6 +4,8 @@ namespace App\Repository;
 
 use App\Entity\Article;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\AbstractQuery;
+use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -11,7 +13,6 @@ use Doctrine\Persistence\ManagerRegistry;
  *
  * @method Article|null find($id, $lockMode = null, $lockVersion = null)
  * @method Article|null findOneBy(array $criteria, array $orderBy = null)
- * @method Article[]    findAll()
  * @method Article[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class ArticleRepository extends ServiceEntityRepository
@@ -20,7 +21,20 @@ class ArticleRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Article::class);
     }
-
+    public function findAll()
+    {
+//        return $this->createQueryBuilder('a')
+////            ->select('a','user')
+////            ->leftJoin('a.author','user')
+//            ->getQuery()
+//            ->getResult()
+//            ;
+        return $this->createQueryBuilder('a')
+            ->select('a', 'PARTIAL user.{id}')
+            ->leftJoin('a.author', 'user')
+            ->getQuery()
+            ->getResult(AbstractQuery::HYDRATE_ARRAY);
+    }
 //    /**
 //     * @return Article[] Returns an array of Article objects
 //     */

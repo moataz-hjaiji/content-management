@@ -30,7 +30,9 @@ class UserController extends AbstractController
         return $this->json([
             'users'=>$users,
             'total'=>count($users)
-        ],Response::HTTP_OK);
+        ],Response::HTTP_OK,[],[
+            'groups'=>'user'
+        ]);
     }
     #[Route('/{id}',name:"show",methods:'GET')]
     public function getSingleUser(int $id): Response
@@ -45,7 +47,9 @@ class UserController extends AbstractController
         return $this->json([
             'status'=>"success",
             'user'=>$user,
-        ],Response::HTTP_OK);
+        ],Response::HTTP_OK,[],[
+            'groups'=>'user'
+        ]);
     }
 
     #[Route('/',name:"create",methods: 'POST')]

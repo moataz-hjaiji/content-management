@@ -20,6 +20,7 @@
         "phpdocumentor/reflection-docblock": "^5.3",
         "phpstan/phpdoc-parser": "^1.24",
         "railsware/mailtrap-php": "^1.7",
+        "stof/doctrine-extensions-bundle": "^1.9",
         "symfony/asset": "6.3.*",
         "symfony/console": "6.3.*",
         "symfony/dotenv": "6.3.*",
@@ -42,7 +43,9 @@
         "symfonycasts/verify-email-bundle": "^1.14"
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.51"
+        "doctrine/doctrine-fixtures-bundle": "^3.5",
+        "symfony/maker-bundle": "^1.51",
+        "zenstruck/foundry": "^1.36"
     },
     "config": {
         "allow-plugins": {
@@ -88,7 +91,7 @@
     },
     "extra": {
         "symfony": {
-            "allow-contrib": false,
+            "allow-contrib": true,
             "require": "6.3.*",
             "docker": true
         }

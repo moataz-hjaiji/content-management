@@ -81,7 +81,6 @@ class AuthenticationController extends AbstractController
         if($form->isValid()){
             $token = $this->tokenManager->create($user);
             $this->authService->authenticate($request);
-            $security->login($user);
             return $this->json(['token' => $token,"status"=>"success","id"=>$user->getId()], Response::HTTP_OK);
         }
         $errors = $this->getErrorsFromForm($form);
@@ -140,6 +139,7 @@ class AuthenticationController extends AbstractController
             $payload = $jws->getPayload();
             $user = $this->userRepository->findOneBy(['email'=>$payload['username']]);
             $user->setIsActive(true);
+            $user->setIsVerified(true);
             $this->em->persist($user);
             $this->em->flush();
             return $this->json(['status'=>"success","message"=>"account active successfully"],Response::HTTP_OK);

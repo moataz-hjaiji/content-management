@@ -5,33 +5,43 @@ namespace App\Entity;
 use App\Repository\ArticleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation\Slug;
+use Gedmo\Timestampable\Traits\TimestampableEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
 {
+    use TimestampableEntity;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Assert\length(min: 4,max: 50,minMessage: "title should be above {{limit}}",maxMessage:"title should be under {{ limit }}")]
+    #[Groups('article')]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
+    #[Assert\Length(min: 4,max: 50,minMessage: "title should be above {{limit}}",maxMessage:"title should be under {{ limit }}")]
+    #[Groups('article')]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups('article')]
     private ?string $content = null;
 
-    #[ORM\ManyToOne(inversedBy: 'articles')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $Author = null;
+    #[ORM\ManyToOne(targetEntity: User::class,inversedBy: 'articles')]
+    #[ORM\JoinColumn(name: 'author_id', referencedColumnName: 'id', nullable: false)]
+    #[Groups('article')]
+    private ?User $author = null;
 
-    #[ORM\Column(length: 255)]
+    #[Assert\Length(max: 100,maxMessage:"title should be under {{ limit }}")]
+    #[ORM\Column(length: 100,unique: true)]
+    #[Slug(fields: ["title"])]
+    #[Groups('article')]
     private ?string $Slug = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $CreatedAt = null;
+
 
     public function getId(): ?int
     {
@@ -64,12 +74,12 @@ class Article
 
     public function getAuthor(): ?User
     {
-        return $this->Author;
+        return $this->author;
     }
 
-    public function setAuthor(?User $Author): static
+    public function setAuthor(?User $author): static
     {
-        $this->Author = $Author;
+        $this->author = $author;
 
         return $this;
     }
@@ -82,18 +92,6 @@ class Article
     public function setSlug(string $Slug): static
     {
         $this->Slug = $Slug;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->CreatedAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $CreatedAt): static
-    {
-        $this->CreatedAt = $CreatedAt;
 
         return $this;
     }

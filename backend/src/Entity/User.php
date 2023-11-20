@@ -6,24 +6,30 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    use TimestampableEntity;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('user')]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups('user')]
     private ?string $email = null;
 
     #[ORM\Column]
+    #[Groups('user')]
     private array $roles = [];
 
     /**
@@ -33,12 +39,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $password ;
 
     #[ORM\Column(length: 255)]
+    #[Groups('user')]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups('user')]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups('user')]
     private ?string $Picture = null;
 
 
