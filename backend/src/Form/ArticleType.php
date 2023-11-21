@@ -13,13 +13,8 @@ class ArticleType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('title',TextType::class,[
-
-            ])
+            ->add('title',TextType::class)
             ->add('content')
-            ->add('Slug')
-            ->add('CreatedAt')
-            ->add('Author')
         ;
     }
 

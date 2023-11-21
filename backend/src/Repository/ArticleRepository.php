@@ -23,12 +23,6 @@ class ArticleRepository extends ServiceEntityRepository
     }
     public function findAll()
     {
-//        return $this->createQueryBuilder('a')
-////            ->select('a','user')
-////            ->leftJoin('a.author','user')
-//            ->getQuery()
-//            ->getResult()
-//            ;
         return $this->createQueryBuilder('a')
             ->select('a', 'PARTIAL user.{id}')
             ->leftJoin('a.author', 'user')

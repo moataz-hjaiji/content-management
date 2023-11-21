@@ -5,9 +5,11 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
+use App\Response\SuccessResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -24,15 +26,22 @@ class UserController extends AbstractController
     }
 
     #[Route('/', name: 'all',methods: "GET")]
-    public function index(): Response
+    public function index()
     {
         $users = $this->userRepository->findAll();
-        return $this->json([
-            'users'=>$users,
-            'total'=>count($users)
-        ],Response::HTTP_OK,[],[
-            'groups'=>'user'
-        ]);
+//        return $this->json([
+//            'users'=>$users,
+//            'total'=>count($users)
+//        ],Response::HTTP_OK,[],[
+//            'groups'=>'user'
+//        ]);
+
+//        $response = new  Response($users,200);
+//        return $response;
+        $data = ['key' => 'value']; // Your data here
+
+        return new SuccessResponse($users);
+        //return $response->send();
     }
     #[Route('/{id}',name:"show",methods:'GET')]
     public function getSingleUser(int $id): Response
@@ -84,9 +93,10 @@ class UserController extends AbstractController
         if($form->isValid()){
             $this->em->persist($user);
             $this->em->flush();
-            return $this->json([
-                'user'=>$user
-            ],Response::HTTP_OK);
+            return new SuccessResponse($user);
+//            return $this->json([
+//                'user'=>$user
+//            ],Response::HTTP_OK);
         }
         $messageError = $this->getErrorsFromForm($form);
         return $this->json(['status'=>'failed','message'=>$messageError[0]],Response::HTTP_BAD_REQUEST);

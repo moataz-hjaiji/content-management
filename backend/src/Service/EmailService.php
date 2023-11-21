@@ -26,7 +26,7 @@ class EmailService
     /**
      * @throws TransportExceptionInterface
      */
-    public function VerificationEmail(string $email)
+    public function VerificationEmail(string $email): void
     {
         $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', getenv('MAILTRAP_API_KEY'));
 
@@ -52,6 +52,7 @@ class EmailService
 //            ;
         try {
             //$response = $this->mailtrapClient->sandbox()->emails()->send($sendEmail, 1000001); // Required second param -> inbox_id
+
             $result = $apiInstance->sendTransacEmail($sendSmtpEmail);
             dd(ResponseHelper::toArray($result));
         }catch (\Exception $e) {

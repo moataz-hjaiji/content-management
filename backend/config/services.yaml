@@ -27,7 +27,11 @@ services:
     App\EventListener\SecuritySubscriber:
         tags:
             - { name: 'monolog.logger', channel: 'security' }
-
+#    App\JsonResponse\SucessResponse:
+#        arguments:
+#            $data: null
+#            $headers: []
+#            $context: []
     Mailtrap\MailtrapClient:
         arguments:
             - '%env(MAILER_API_TOKEN)%'
