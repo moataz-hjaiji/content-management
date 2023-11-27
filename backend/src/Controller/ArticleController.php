@@ -3,57 +3,69 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Entity\User;
 use App\Form\ArticleType;
+
+use App\JsonResponse\FormatData;
 use App\Repository\ArticleRepository;
-use App\Response\SuccessResponse;
+
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-#[Route('/article')]
+#[Route('/articles')]
 class ArticleController extends AbstractController
 {
-    #[Route('/', name: 'app_article_index', methods: ['GET'])]
-    public function index(ArticleRepository $articleRepository): JsonResponse
-    {
-        $articles = $articleRepository->findAll();
 
-        $response = new SuccessResponse($articles,$this->container);
-        return $response->send();
-//        return $this->json(['status'=>"success","articles"=>$articles],Response::HTTP_OK,[],[
-//            'groups'=>"article"
-//        ]);
+    public function __construct(private ArticleRepository $articleRepository)
+    {
+    }
+
+    #[Route('/', name: 'app_article_index', methods: ['GET'])]
+    public function index(): JsonResponse
+    {
+        $articles = $this->articleRepository->findAll();
+        $data = new FormatData($articles);
+        return $this->json($data->getFormatData(),Response::HTTP_OK,[],[
+            'groups'=>"article"
+        ]);
     }
 
     #[Route('/new', name: 'app_article_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager,#[CurrentUser] User $user): Response
     {
         $jsonData = json_decode($request->getContent(), true);
         $article = new Article();
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
         $form->submit($jsonData);
-        if ( $form->isValid()) {
+        if ($form->isValid()) {
+            $article->setAuthor($user);
             $entityManager->persist($article);
             $entityManager->flush();
-
-            //return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
+            $data = new FormatData([
+              [  'id'=>$article->getId(),
+                'slug'=>$article->getSlug(),
+                'content'=>$article->getContent(),
+                'createdAt'=>$article->getCreatedAt()]
+            ]);
+            return $this->json($data->getFormatData(),Response::HTTP_OK,[],['groups'=>'article']);
         }
-
-        return $this->render('article/new.html.twig', [
-            'article' => $article,
-            'form' => $form,
-        ]);
+        $messageError = $this->getErrorsFromForm($form);
+        return $this->json(['status'=>'failed',"message"=>$messageError],Response::HTTP_BAD_REQUEST);
     }
 
-    #[Route('/{id}', name: 'app_article_show', methods: ['GET'])]
-    public function show(Article $article): Response
+    #[Route('/{slug}', name: 'app_article_show', methods: ['GET'])]
+    public function show(string $slug): Response
     {
-        return $this->render('article/show.html.twig', [
-            'article' => $article,
+        $article = $this->articleRepository->findBy(['slug'=>$slug]);
+        return $this->json([
+            'article'=>$article
         ]);
     }
 
@@ -84,5 +96,24 @@ class ArticleController extends AbstractController
         }
 
         return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
+    }
+    private function getErrorsFromForm(FormInterface $form): array
+    {
+        $errors = [];
+
+        foreach ($form->getErrors(true, true) as $error) {
+            $errors[] = $error->getMessage();
+        }
+
+        foreach ($form->all() as $childForm) {
+            if ($childForm instanceof FormInterface) {
+                $childErrors = $this->getErrorsFromForm($childForm);
+                if ($childErrors) {
+                    $errors[$childForm->getName()] = $childErrors;
+                }
+            }
+        }
+
+        return $errors;
     }
 }

@@ -3,12 +3,13 @@
 namespace App\Service;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
-class Serializer implements \Symfony\Component\Serializer\SerializerInterface
+class Serializer implements SerializerInterface
 {
 
 
-    public function __construct(private ContainerInterface $container)
+    public function __construct(private SerializerInterface $serializer)
     {
     }
 
@@ -27,7 +28,7 @@ class Serializer implements \Symfony\Component\Serializer\SerializerInterface
         return $this->normalize($data, $context);
     }
 
-    private function normalize(mixed $data, array $context = []): string
+    protected function normalize(mixed $data, array $context = []): string
     {
         $serializer = $this->getSerializer();
 
@@ -37,7 +38,7 @@ class Serializer implements \Symfony\Component\Serializer\SerializerInterface
     private function getSerializer(): object
     {
         // Get the Symfony serializer service from the container
-        return $this->container->get('serializer');
+        return $this->serializer;
     }
 
     public function deserialize(mixed $data, string $type, string $format, array $context = []): mixed

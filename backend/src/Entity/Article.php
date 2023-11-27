@@ -39,7 +39,7 @@ class Article
     #[ORM\Column(length: 100,unique: true)]
     #[Slug(fields: ["title"])]
     #[Groups('article')]
-    private ?string $Slug = null;
+    private ?string $slug = null;
 
 
 
@@ -86,12 +86,12 @@ class Article
 
     public function getSlug(): ?string
     {
-        return $this->Slug;
+        return $this->slug;
     }
 
-    public function setSlug(string $Slug): static
+    public function setSlug(string $slug): static
     {
-        $this->Slug = $Slug;
+        $this->slug = $slug;
 
         return $this;
     }

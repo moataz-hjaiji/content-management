@@ -14,7 +14,9 @@ class ArticleType extends AbstractType
     {
         $builder
             ->add('title',TextType::class)
-            ->add('content')
+            ->add('content',TextType::class,[
+                'required'=>true
+            ])
         ;
     }
 
@@ -22,6 +24,7 @@ class ArticleType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Article::class,
+            'csrf_protection' => false
         ]);
     }
 }
